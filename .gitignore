@@ -1,0 +1,23 @@
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+
+# STS / Eclipse
+.metadata/
+.settings/
+.settings
+.classpath
+.project
+.sts4-cache/
+.sts4-cache
+.apt_generated
+.factorypath
+.springBeans
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
