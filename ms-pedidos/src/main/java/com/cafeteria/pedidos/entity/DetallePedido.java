@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
+import java.util.UUID; // Asegúrate de importar UUID
 
 @Entity
 @Table(name = "detalles_pedido")
@@ -18,7 +19,9 @@ public class DetallePedido {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    private Long productoId; 
+    // Cambiado de Long a UUID para ser compatible con MS-CATALOGO
+    private UUID productoId; 
+    
     private String nombreProducto; 
     private Integer cantidad;
     private BigDecimal precioUnitario;
