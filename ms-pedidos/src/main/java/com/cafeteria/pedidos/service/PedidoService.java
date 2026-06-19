@@ -32,7 +32,7 @@ public class PedidoService {
         // 2. Construir el pedido base
         Pedido pedido = Pedido.builder()
                 .fecha(LocalDateTime.now())
-                .cajero(request.getCajero())
+                .cajero(turnoActivo.getCajeroApertura()) // FIX: el cajero sale del turno activo, no del request
                 .tipo(request.getTipo())
                 .estado("COMPLETADA")
                 .turno(turnoActivo)
@@ -42,7 +42,7 @@ public class PedidoService {
         List<DetallePedido> detalles = request.getDetalles().stream().map(d -> {
             // Consultar producto real al catálogo (Validación de seguridad)
             ProductoResponse productoReal = catalogoClient.obtenerProducto(d.getProductoId());
-            
+
             // Validar que el precio recibido del front coincida con el real en BD
             if (productoReal.getPrecioBase().doubleValue() != d.getPrecioUnitario().doubleValue()) {
                 throw new RuntimeException("Error: El precio de " + d.getNombreProducto() + " no coincide con el catálogo.");
@@ -60,7 +60,7 @@ public class PedidoService {
         }).collect(Collectors.toList());
 
         pedido.setDetalles(detalles);
-        
+
         // 4. Calcular total
         BigDecimal total = detalles.stream()
                 .map(DetallePedido::getSubtotal)
@@ -70,7 +70,7 @@ public class PedidoService {
         // 5. Actualizar resumen de turno
         turnoActivo.setVentasTotales(turnoActivo.getVentasTotales().add(total));
         turnoActivo.setOrdenesCompletadas(turnoActivo.getOrdenesCompletadas() + 1);
-        
+
         turnoRepository.save(turnoActivo);
         return pedidoRepository.save(pedido);
     }
@@ -104,7 +104,7 @@ public class PedidoService {
     public Turno cerrarTurno() {
         Turno turnoActivo = turnoRepository.findByEstado("ACTIVO")
                 .orElseThrow(() -> new RuntimeException("No hay turno activo para cerrar."));
-        
+
         turnoActivo.setEstado("CERRADO");
         turnoActivo.setFechaCierre(LocalDateTime.now());
         return turnoRepository.save(turnoActivo);
@@ -113,7 +113,7 @@ public class PedidoService {
     public ResumenTurnoResponse obtenerResumenTurnoActivo() {
         Turno turnoActivo = turnoRepository.findByEstado("ACTIVO")
                 .orElseThrow(() -> new RuntimeException("No hay turno activo."));
-        
+
         ResumenTurnoResponse response = new ResumenTurnoResponse();
         response.setTurnoId(turnoActivo.getId());
         response.setEstado(turnoActivo.getEstado());
