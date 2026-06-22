@@ -5,6 +5,7 @@ import com.cafeteria.pedidos.dto.PedidoRequest;
 import com.cafeteria.pedidos.dto.ProductoResponse;
 import com.cafeteria.pedidos.dto.ResumenTurnoResponse;
 import com.cafeteria.pedidos.entity.*;
+import com.cafeteria.pedidos.exception.TurnoNoActivoException;
 import com.cafeteria.pedidos.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,29 +22,24 @@ public class PedidoService {
 
     private final PedidoRepository pedidoRepository;
     private final TurnoRepository turnoRepository;
-    private final CatalogoClient catalogoClient; // Inyección de Feign Client
+    private final CatalogoClient catalogoClient;
 
     @Transactional
     public Pedido crearPedido(PedidoRequest request) {
-        // 1. Validar que exista un turno
         Turno turnoActivo = turnoRepository.findByEstado("ACTIVO")
-                .orElseThrow(() -> new RuntimeException("No hay un turno activo. Debe abrir caja primero."));
+                .orElseThrow(() -> new TurnoNoActivoException("No hay un turno activo. Debe abrir caja primero."));
 
-        // 2. Construir el pedido base
         Pedido pedido = Pedido.builder()
                 .fecha(LocalDateTime.now())
-                .cajero(turnoActivo.getCajeroApertura()) // FIX: el cajero sale del turno activo, no del request
+                .cajero(turnoActivo.getCajeroApertura())
                 .tipo(request.getTipo())
                 .estado("COMPLETADA")
                 .turno(turnoActivo)
                 .build();
 
-        // 3. Procesar detalles y validar precios contra MS-CATALOGO
         List<DetallePedido> detalles = request.getDetalles().stream().map(d -> {
-            // Consultar producto real al catálogo (Validación de seguridad)
             ProductoResponse productoReal = catalogoClient.obtenerProducto(d.getProductoId());
 
-            // Validar que el precio recibido del front coincida con el real en BD
             if (productoReal.getPrecioBase().doubleValue() != d.getPrecioUnitario().doubleValue()) {
                 throw new RuntimeException("Error: El precio de " + d.getNombreProducto() + " no coincide con el catálogo.");
             }
@@ -61,13 +57,11 @@ public class PedidoService {
 
         pedido.setDetalles(detalles);
 
-        // 4. Calcular total
         BigDecimal total = detalles.stream()
                 .map(DetallePedido::getSubtotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        pedido.setTotal(total);
+            pedido.setTotal(total);
 
-        // 5. Actualizar resumen de turno
         turnoActivo.setVentasTotales(turnoActivo.getVentasTotales().add(total));
         turnoActivo.setOrdenesCompletadas(turnoActivo.getOrdenesCompletadas() + 1);
 
@@ -103,7 +97,7 @@ public class PedidoService {
     @Transactional
     public Turno cerrarTurno() {
         Turno turnoActivo = turnoRepository.findByEstado("ACTIVO")
-                .orElseThrow(() -> new RuntimeException("No hay turno activo para cerrar."));
+                .orElseThrow(() -> new TurnoNoActivoException("No hay turno activo para cerrar."));
 
         turnoActivo.setEstado("CERRADO");
         turnoActivo.setFechaCierre(LocalDateTime.now());
@@ -112,7 +106,7 @@ public class PedidoService {
 
     public ResumenTurnoResponse obtenerResumenTurnoActivo() {
         Turno turnoActivo = turnoRepository.findByEstado("ACTIVO")
-                .orElseThrow(() -> new RuntimeException("No hay turno activo."));
+                .orElseThrow(() -> new TurnoNoActivoException("No hay turno activo."));
 
         ResumenTurnoResponse response = new ResumenTurnoResponse();
         response.setTurnoId(turnoActivo.getId());
