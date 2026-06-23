@@ -19,7 +19,7 @@ public class Turno {
     private String cajeroApertura;
     
     @Column(name = "estado")
-    private String estado; // ACTIVO, CERRADO
+    private String estado; 
     
     private BigDecimal ventasTotales;
     private Integer ordenesCompletadas;

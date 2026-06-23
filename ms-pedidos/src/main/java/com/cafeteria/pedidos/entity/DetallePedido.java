@@ -19,7 +19,6 @@ public class DetallePedido {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    // Cambiado de Long a UUID para ser compatible con MS-CATALOGO
     private UUID productoId; 
     
     private String nombreProducto; 

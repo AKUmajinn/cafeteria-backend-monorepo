@@ -9,7 +9,5 @@ import java.util.UUID;
 @Repository
 public interface CategoriaRepository extends JpaRepository<Categoria, UUID> {
     
-    // Método para cumplir con tu requerimiento: GET /catalogo/categorias
-    // Nos permite traer solo las que tengan estado "ACTIVO"
     List<Categoria> findByEstado(String estado);
 }
