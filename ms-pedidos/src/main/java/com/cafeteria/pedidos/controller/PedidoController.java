@@ -34,7 +34,6 @@ public class PedidoController {
         return ResponseEntity.ok(pedidoService.obtenerPedido(id));
     }
 
-    // NUEVO ENDPOINT: Actualizar estado
     @PatchMapping("/{id}/estado")
     public ResponseEntity<Pedido> actualizarEstado(@PathVariable Long id, @RequestParam String estado) {
         return ResponseEntity.ok(pedidoService.actualizarEstado(id, estado.toUpperCase()));
