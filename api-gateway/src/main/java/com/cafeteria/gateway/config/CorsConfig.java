@@ -17,7 +17,6 @@ public class CorsConfig {
 
         config.setAllowedOrigins(List.of("http://localhost:4200"));
 
-        // ¡AQUÍ ESTÁ LA MAGIA! Se agregó "PATCH" a la lista
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
 
         config.setAllowedHeaders(List.of("*"));
@@ -27,7 +26,7 @@ public class CorsConfig {
         config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config); // aplica a todas las rutas
+        source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
     }
 }
