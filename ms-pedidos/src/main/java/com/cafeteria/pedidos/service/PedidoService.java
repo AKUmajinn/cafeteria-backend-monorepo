@@ -33,7 +33,7 @@ public class PedidoService {
                 .fecha(LocalDateTime.now())
                 .cajero(turnoActivo.getCajeroApertura())
                 .tipo(request.getTipo())
-                .estado("PENDIENTE") // Cambio: ahora nace como PENDIENTE
+                .estado("PENDIENTE") 
                 .turno(turnoActivo)
                 .build();
 
@@ -62,7 +62,6 @@ public class PedidoService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         pedido.setTotal(total);
 
-        // Ya NO sumamos al turno aquí, porque el pedido aún no está completado.
         
         return pedidoRepository.save(pedido);
     }
@@ -76,7 +75,6 @@ public class PedidoService {
                 .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
     }
 
-    // NUEVO MÉTODO: Actualizar estado y recalcular métricas del turno
     @Transactional
     public Pedido actualizarEstado(Long id, String nuevoEstado) {
         Pedido pedido = pedidoRepository.findById(id)
@@ -84,12 +82,11 @@ public class PedidoService {
 
         String estadoAnterior = pedido.getEstado();
         if (estadoAnterior.equals(nuevoEstado)) {
-            return pedido; // Sin cambios
+            return pedido; 
         }
 
         Turno turno = pedido.getTurno();
 
-        // 1. Revertir el efecto del estado anterior
         if ("COMPLETADA".equals(estadoAnterior)) {
             turno.setVentasTotales(turno.getVentasTotales().subtract(pedido.getTotal()));
             turno.setOrdenesCompletadas(turno.getOrdenesCompletadas() - 1);
@@ -97,7 +94,7 @@ public class PedidoService {
             turno.setOrdenesCanceladas(turno.getOrdenesCanceladas() - 1);
         }
 
-        // 2. Aplicar el efecto del nuevo estado
+     
         if ("COMPLETADA".equals(nuevoEstado)) {
             turno.setVentasTotales(turno.getVentasTotales().add(pedido.getTotal()));
             turno.setOrdenesCompletadas(turno.getOrdenesCompletadas() + 1);
