@@ -17,12 +17,10 @@ public class CorsConfig {
 
         config.setAllowedOrigins(List.of("http://localhost:4200"));
 
-
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-
+        // ¡AQUÍ ESTÁ LA MAGIA! Se agregó "PATCH" a la lista
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
 
         config.setAllowedHeaders(List.of("*"));
-
 
         config.setAllowCredentials(true);
 

@@ -33,7 +33,7 @@ public class PedidoService {
                 .fecha(LocalDateTime.now())
                 .cajero(turnoActivo.getCajeroApertura())
                 .tipo(request.getTipo())
-                .estado("COMPLETADA")
+                .estado("PENDIENTE") // Cambio: ahora nace como PENDIENTE
                 .turno(turnoActivo)
                 .build();
 
@@ -60,12 +60,10 @@ public class PedidoService {
         BigDecimal total = detalles.stream()
                 .map(DetallePedido::getSubtotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-            pedido.setTotal(total);
+        pedido.setTotal(total);
 
-        turnoActivo.setVentasTotales(turnoActivo.getVentasTotales().add(total));
-        turnoActivo.setOrdenesCompletadas(turnoActivo.getOrdenesCompletadas() + 1);
-
-        turnoRepository.save(turnoActivo);
+        // Ya NO sumamos al turno aquí, porque el pedido aún no está completado.
+        
         return pedidoRepository.save(pedido);
     }
 
@@ -76,6 +74,40 @@ public class PedidoService {
     public Pedido obtenerPedido(Long id) {
         return pedidoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
+    }
+
+    // NUEVO MÉTODO: Actualizar estado y recalcular métricas del turno
+    @Transactional
+    public Pedido actualizarEstado(Long id, String nuevoEstado) {
+        Pedido pedido = pedidoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
+
+        String estadoAnterior = pedido.getEstado();
+        if (estadoAnterior.equals(nuevoEstado)) {
+            return pedido; // Sin cambios
+        }
+
+        Turno turno = pedido.getTurno();
+
+        // 1. Revertir el efecto del estado anterior
+        if ("COMPLETADA".equals(estadoAnterior)) {
+            turno.setVentasTotales(turno.getVentasTotales().subtract(pedido.getTotal()));
+            turno.setOrdenesCompletadas(turno.getOrdenesCompletadas() - 1);
+        } else if ("CANCELADA".equals(estadoAnterior)) {
+            turno.setOrdenesCanceladas(turno.getOrdenesCanceladas() - 1);
+        }
+
+        // 2. Aplicar el efecto del nuevo estado
+        if ("COMPLETADA".equals(nuevoEstado)) {
+            turno.setVentasTotales(turno.getVentasTotales().add(pedido.getTotal()));
+            turno.setOrdenesCompletadas(turno.getOrdenesCompletadas() + 1);
+        } else if ("CANCELADA".equals(nuevoEstado)) {
+            turno.setOrdenesCanceladas(turno.getOrdenesCanceladas() + 1);
+        }
+
+        pedido.setEstado(nuevoEstado);
+        turnoRepository.save(turno);
+        return pedidoRepository.save(pedido);
     }
 
     @Transactional

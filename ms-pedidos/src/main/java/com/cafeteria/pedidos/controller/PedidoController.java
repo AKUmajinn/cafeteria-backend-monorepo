@@ -19,7 +19,6 @@ public class PedidoController {
 
     private final PedidoService pedidoService;
 
-
     @PostMapping
     public ResponseEntity<Pedido> crearPedido(@RequestBody PedidoRequest request) {
         return new ResponseEntity<>(pedidoService.crearPedido(request), HttpStatus.CREATED);
@@ -35,6 +34,11 @@ public class PedidoController {
         return ResponseEntity.ok(pedidoService.obtenerPedido(id));
     }
 
+    // NUEVO ENDPOINT: Actualizar estado
+    @PatchMapping("/{id}/estado")
+    public ResponseEntity<Pedido> actualizarEstado(@PathVariable Long id, @RequestParam String estado) {
+        return ResponseEntity.ok(pedidoService.actualizarEstado(id, estado.toUpperCase()));
+    }
 
     @GetMapping("/turno/activo")
     public ResponseEntity<ResumenTurnoResponse> obtenerResumenTurno() {
